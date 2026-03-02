@@ -1,0 +1,45 @@
+name: Publish to ClawHub
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "stripfeed/SKILL.md"
+
+  workflow_dispatch:
+    inputs:
+      changelog:
+        description: "Changelog message"
+        required: false
+        default: "Update skill"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install ClawHub CLI
+        run: npm install -g clawhub
+
+      - name: Extract version from SKILL.md
+        id: version
+        run: |
+          VERSION=$(grep '^version:' stripfeed/SKILL.md | sed 's/version: //')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to ClawHub
+        env:
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+        run: |
+          CHANGELOG="${{ github.event.inputs.changelog || github.event.head_commit.message }}"
+          clawhub publish ./stripfeed \
+            --slug stripfeed \
+            --name "StripFeed" \
+            --version "${{ steps.version.outputs.version }}" \
+            --tags latest \
+            --changelog "$CHANGELOG"
