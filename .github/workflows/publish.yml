@@ -32,9 +32,10 @@ jobs:
           VERSION=$(grep '^version:' stripfeed/SKILL.md | sed 's/version: //')
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Authenticate with ClawHub
+        run: clawhub login --token "${{ secrets.CLAWHUB_TOKEN }}"
+
       - name: Publish to ClawHub
-        env:
-          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
         run: |
           CHANGELOG="${{ github.event.inputs.changelog || github.event.head_commit.message }}"
           clawhub publish ./stripfeed \
